@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titanic Survival Predictor</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e8eef7, #f8fafc);
+            color: #18243a;
+            min-height: 100vh;
+            padding: 35px 16px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(25, 45, 75, .12);
+        }
+
+        .header { text-align: center; margin-bottom: 28px; }
+        .ship { font-size: 42px; }
+        h1 { margin: 10px 0; }
+        .subtitle { color: #617087; line-height: 1.6; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+.fare-hint {
+    display: block;
+    margin-top: 6px;
+    color: #617087;
+    font-size: 12px;
+}
+
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 7px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccd5e1;
+            border-radius: 9px;
+            font-size: 15px;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid #7ba5ed;
+            border-color: #477fe0;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #245bd6;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover { background: #1747b5; }
+
+        .result, .error {
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result { background: #eef5ff; }
+        .result h2 { margin-top: 0; }
+        .probability { font-size: 28px; font-weight: bold; }
+        .error { background: #fff0f0; color: #9d2020; }
+
+        .note {
+            margin-top: 24px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #617087;
+        }
+
+        @media (max-width: 520px) {
+            .container { padding: 22px; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="ship">🚢</div>
+        <h1>Titanic Survival Predictor</h1>
+        <p class="subtitle">
+            Enter passenger details to get a machine-learning prediction.
+        </p>
+    </header>
+
+    <form method="POST">
+        <div class="form-grid">
+            <div>
+                <label for="Pclass">Passenger class</label>
+                <select id="Pclass" name="Pclass" required>
+                    <option value="1" {% if form_data.get('Pclass', '3') == '1' %}selected{% endif %}>1st Class</option>
+                    <option value="2" {% if form_data.get('Pclass', '3') == '2' %}selected{% endif %}>2nd Class</option>
+                    <option value="3" {% if form_data.get('Pclass', '3') == '3' %}selected{% endif %}>3rd Class</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="Sex">Sex</label>
+                <select id="Sex" name="Sex" required>
+                    <option value="female" {% if form_data.get('Sex') == 'female' %}selected{% endif %}>Female</option>
+                    <option value="male" {% if form_data.get('Sex', 'male') == 'male' %}selected{% endif %}>Male</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="Age">Age</label>
+                <input id="Age" type="number" name="Age" min="0" max="100"
+                       step="0.1" value="{{ form_data.get('Age', '25') }}" required>
+            </div>
+
+            
+<div>
+    <label for="Fare">Ticket fare</label>
+    <input
+        id="Fare"
+        type="number"
+        name="Fare"
+        min="0"
+        max="512.3292"
+        step="0.0001"
+        value="{{ form_data.get('Fare', '32') }}"
+        required
+    >
+    <small class="fare-hint">
+        Dataset fare range: 0.0 – 512.3292
+    </small>
+</div>
+
+
+            <div>
+                <label for="SibSp">Siblings / spouse aboard</label>
+                <input id="SibSp" type="number" name="SibSp" min="0"
+                       value="{{ form_data.get('SibSp', '0') }}" required>
+            </div>
+
+            <div>
+                <label for="Parch">Parents / children aboard</label>
+                <input id="Parch" type="number" name="Parch" min="0"
+                       value="{{ form_data.get('Parch', '0') }}" required>
+            </div>
+
+            <div>
+                <label for="Embarked">Port of embarkation</label>
+                <select id="Embarked" name="Embarked" required>
+                    <option value="S" {% if form_data.get('Embarked', 'S') == 'S' %}selected{% endif %}>Southampton</option>
+                    <option value="C" {% if form_data.get('Embarked') == 'C' %}selected{% endif %}>Cherbourg</option>
+                    <option value="Q" {% if form_data.get('Embarked') == 'Q' %}selected{% endif %}>Queenstown</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit">Predict Survival</button>
+    </form>
+
+    {% if result %}
+    <section class="result" aria-live="polite">
+        <h2>
+            {% if result.survived == 1 %}🟢{% else %}🔴{% endif %}
+            {{ result.label }}
+        </h2>
+        <p>Model-estimated survival probability</p>
+        <div class="probability">{{ result.probability }}%</div>
+        <p>
+            {% if result.survived == 1 %}
+                The model predicts survival for these passenger details.
+            {% else %}
+                The model predicts non-survival for these passenger details.
+            {% endif %}
+        </p>
+    </section>
+    {% endif %}
+
+    {% if error %}
+    <div class="error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <p class="note">
+        This is an educational machine-learning demonstration.
+        Predictions are estimates, not historical facts or guarantees.
+    </p>
+</div>
+</body>
+</html>
